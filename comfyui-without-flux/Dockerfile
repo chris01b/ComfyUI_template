@@ -242,6 +242,12 @@ RUN cd / && \
     git submodule update --init --recursive && \
     pip3 install -r requirements.txt
 
+# Install SageAttention
+RUN cd / && \
+    git clone https://github.com/thu-ml/SageAttention.git && \
+    cd SageAttention && \
+    pip3 install -e .
+
 # copy default train_lora.yaml file
 COPY --chmod=644 ai-toolkit/train_lora.yaml /ai-toolkit/config/train_lora.yaml
 COPY --chmod=755 ai-toolkit/caption_images.py /caption_images.py
