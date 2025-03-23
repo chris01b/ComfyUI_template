@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # The URL of the github repo
-repo_url="https://raw.githubusercontent.com/ValyrianTech/ComfyUI_with_Flux/main/comfyui-without-flux/workflows"
+repo_url="https://raw.githubusercontent.com/chris01b/ComfyUI_template/main/comfyui-without-flux/workflows"
 
 # The local directory to store the files
 local_dir="/workspace/ComfyUI/user/default/workflows"

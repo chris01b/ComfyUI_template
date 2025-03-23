@@ -1,4 +1,4 @@
-FROM valyriantech/comfyui-without-flux:latest
+FROM chris01b/comfyui-without-flux:latest
 
 # Due to the fact that the models are in a gated repository, we need to download them separately BEFORE building this image and store them locally in a folder called flux
 # https://huggingface.co/black-forest-labs/FLUX.1-dev/blob/main/ae.sft

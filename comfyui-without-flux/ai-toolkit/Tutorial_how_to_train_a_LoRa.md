@@ -16,10 +16,10 @@ There are two options for training your LoRa:
 1. Go to your Huggingface account and select 'Settings' and then 'Access Tokens'.
 2. Create a new fine-grained token. The only permission that is needed is the 'Read access to contents of all public gated repos you can access' permission.
    - Optionally, if you also want to publish to Huggingface, you will also need to give write access.
-   ![screenshot_1](https://github.com/ValyrianTech/ComfyUI_with_Flux/blob/main/comfyui-without-flux/ai-toolkit/images/huggingface_token.png?raw=true)
+   ![screenshot_1](https://github.com/chris01b/ComfyUI_template/blob/main/comfyui-without-flux/ai-toolkit/images/huggingface_token.png?raw=true)
 
 3. Set the HF_TOKEN environment variable with your new token.
-![screenshot_2](https://github.com/ValyrianTech/ComfyUI_with_Flux/blob/main/comfyui-without-flux/ai-toolkit/images/environment_variables.png?raw=true)
+![screenshot_2](https://github.com/chris01b/ComfyUI_template/blob/main/comfyui-without-flux/ai-toolkit/images/environment_variables.png?raw=true)
 4. Go to [FLUX.1-dev](https://huggingface.co/black-forest-labs/FLUX.1-dev) and click the button to request access.
 
 ## Training Your LoRa
@@ -36,16 +36,16 @@ Open a terminal in JupyterLab and run the following commands:
 cd /workspace/ai-toolkit
 python3 flux_train_ui.py
 ```
-![screenshot_3](https://github.com/ValyrianTech/ComfyUI_with_Flux/blob/main/comfyui-without-flux/ai-toolkit/images/start_flux_train_ui.png?raw=true)
+![screenshot_3](https://github.com/chris01b/ComfyUI_template/blob/main/comfyui-without-flux/ai-toolkit/images/start_flux_train_ui.png?raw=true)
 
 
 1. Click on the gradio link to connect.
-![screenshot_4](https://github.com/ValyrianTech/ComfyUI_with_Flux/blob/main/comfyui-without-flux/ai-toolkit/images/flux_train_ui_1.png?raw=true)
+![screenshot_4](https://github.com/chris01b/ComfyUI_template/blob/main/comfyui-without-flux/ai-toolkit/images/flux_train_ui_1.png?raw=true)
 
 2. Set name and trigger word.
 3. Upload images.
 4. Generate captions. Click 'Add AI captions with Florence-2'
-![screenshot_5](https://github.com/ValyrianTech/ComfyUI_with_Flux/blob/main/comfyui-without-flux/ai-toolkit/images/flux_train_ui_2.png?raw=true)
+![screenshot_5](https://github.com/chris01b/ComfyUI_template/blob/main/comfyui-without-flux/ai-toolkit/images/flux_train_ui_2.png?raw=true)
 5. Set advanced options. (Change the number of steps if needed, you can also uncheck 'Low VRAM')
 6. Set some test prompts.
 6. Start training.
