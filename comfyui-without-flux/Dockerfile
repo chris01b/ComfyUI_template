@@ -1,9 +1,12 @@
-ARG CUDA_VERSION="12.8.1"
+ARG CUDA_VERSION="12.6.3"
 ARG UBUNTU_VERSION="24.04"
 ARG DOCKER_FROM=nvidia/cuda:$CUDA_VERSION-cudnn-devel-ubuntu$UBUNTU_VERSION
 
 # Base NVidia CUDA Ubuntu image
 FROM $DOCKER_FROM AS base
+
+# Set environment variable to allow pip to install packages globally
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
 
 # Install Python plus openssh, which is our minimum set of required packages.
 RUN apt-get update -y && \
@@ -11,6 +14,9 @@ RUN apt-get update -y && \
     apt-get install -y --no-install-recommends openssh-server openssh-client git git-lfs wget vim zip unzip curl && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Fix a some errors
+RUN mkdir -p /usr/share/fonts/truetype
 
 # Set environment variable to allow pip to install packages globally
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
@@ -24,9 +30,10 @@ COPY default /etc/nginx/sites-available/default
 
 ENV PATH="/usr/local/cuda/bin:${PATH}"
 
-# Install pytorch (nightly)
-ARG CUDA="128"
-RUN pip3 install --no-cache-dir -U --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu$CUDA
+# Install pytorch
+ARG PYTORCH="2.6.0"
+ARG CUDA="126"
+RUN pip3 install --no-cache-dir -U torch==$PYTORCH torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu$CUDA
 
 # Install HuggingFace Hub with fast transfer support
 RUN pip3 install -U "huggingface_hub[cli,hf_transfer]"
