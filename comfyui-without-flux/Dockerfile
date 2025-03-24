@@ -9,9 +9,11 @@ FROM $DOCKER_FROM AS base
 RUN apt-get update -y && \
     apt-get install -y python3 python3-pip python3-venv && \
     apt-get install -y --no-install-recommends openssh-server openssh-client git git-lfs wget vim zip unzip curl && \
-    python3 -m pip install --upgrade pip && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Set environment variable to allow pip to install packages globally
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
 
 # Install nginx
 RUN apt-get update && \
@@ -25,6 +27,10 @@ ENV PATH="/usr/local/cuda/bin:${PATH}"
 # Install pytorch (nightly)
 ARG CUDA="128"
 RUN pip3 install --no-cache-dir -U --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu$CUDA
+
+# Install HuggingFace Hub with fast transfer support
+RUN pip3 install -U "huggingface_hub[cli,hf_transfer]"
+ENV HF_HUB_ENABLE_HF_TRANSFER=1
 
 COPY --chmod=755 start-ssh-only.sh /start.sh
 COPY --chmod=755 start-original.sh /start-original.sh
@@ -59,7 +65,7 @@ EXPOSE 8188
 RUN wget "https://github.com/comfyanonymous/ComfyUI_examples/blob/master/flux/flux_dev_example.png" -P /ComfyUI
 
 # Install Xlabs-AI/flux-RealismLora
-RUN apt-get install -y libgl1-mesa-glx libglib2.0-0
+RUN apt-get install -y libgl1 libglx-mesa0 libglib2.0-0
 RUN cd /ComfyUI/custom_nodes && \
     git clone https://github.com/XLabs-AI/x-flux-comfyui.git && \
     cd x-flux-comfyui && \
@@ -240,13 +246,8 @@ RUN cd / && \
     git clone https://github.com/ostris/ai-toolkit.git && \
     cd ai-toolkit && \
     git submodule update --init --recursive && \
+    pip3 install --upgrade setuptools && \
     pip3 install -r requirements.txt
-
-# Install SageAttention
-RUN cd / && \
-    git clone https://github.com/thu-ml/SageAttention.git && \
-    cd SageAttention && \
-    pip3 install -e .
 
 # copy default train_lora.yaml file
 COPY --chmod=644 ai-toolkit/train_lora.yaml /ai-toolkit/config/train_lora.yaml
