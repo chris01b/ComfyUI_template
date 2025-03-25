@@ -1,23 +1,75 @@
 #!/bin/bash
 
-FILE="/workspace/ComfyUI/models/diffusion_models/flux1-dev.sft"
+# This script checks if all required files and repositories are properly installed
 
-if [ ! -f "$FILE" ]; then
-    echo "#################################################################"
-    echo "WARNING!"
-    echo "#################################################################"
-    echo "File $FILE does not exist."
-    echo "Some of the required files, like the flux.1 model, are not present."
-    echo ""
-    echo "This docker image is intended to be used in combination with a network volume that has been initialized with the 'ComfyUI WITH Flux' template first."
-    echo "The 'ComfyUI WITHOUT Flux' container and 'ComfyUI WITH Flux' containers are identical, except that the 'ComfyUI WITHOUT Flux' container does not include about 20GB of model files."
-    echo "Please use the 'ComfyUI WITH Flux' template first with a new and empty network volume, this will copy all the files to the network volume so that you don't need to download them again each time you deploy a new pod."
-    echo ""
-    echo "Alternatively, you can download the files manually like this:"
-    echo "When deploying the pod, set an environment variable HF_TOKEN with your Hugging Face token."
-    echo "Make sure to check the 'Read access to contents of all public gated repos you can access' permission when creating the token."
-    echo "Go to https://huggingface.co/black-forest-labs/FLUX.1-dev and click the button to request access."
-    echo "Then run the following command: bash /download_Files.sh in the terminal."
-    echo ""
-    echo "#################################################################"
+echo "🔍 Checking for required model files..."
+
+# FLUX model files check
+if [[ ! -e "/workspace/ComfyUI/models/vae/ae.sft" ]]; then
+    echo "⚠️ FLUX VAE model (ae.sft) not found, model will not work properly."
+    echo "   Please set HF_TOKEN environment variable and restart pod with DOWNLOAD_FLUX=true"
+    MISSING_FILES=1
+else
+    echo "✅ FLUX VAE model (ae.sft) found"
+fi
+
+if [[ ! -e "/workspace/ComfyUI/models/diffusion_models/flux1-dev.sft" ]]; then
+    echo "⚠️ FLUX diffusion model (flux1-dev.sft) not found, model will not work properly."
+    echo "   Please set HF_TOKEN environment variable and restart pod with DOWNLOAD_FLUX=true"
+    MISSING_FILES=1
+else
+    echo "✅ FLUX diffusion model (flux1-dev.sft) found"
+fi
+
+# Text encoder checks
+if [[ ! -e "/workspace/ComfyUI/models/clip/clip_l.safetensors" ]]; then
+    echo "⚠️ CLIP-L model not found"
+    MISSING_FILES=1
+else
+    echo "✅ CLIP-L model found"
+fi
+
+if [[ ! -e "/workspace/ComfyUI/models/clip/t5xxl_fp8_e4m3fn.safetensors" ]]; then
+    echo "⚠️ T5 model not found"
+    MISSING_FILES=1
+else
+    echo "✅ T5 model found"
+fi
+
+# Check for required repositories
+echo "🔍 Checking for required repositories..."
+
+# Function to check if a repository exists and is properly installed
+check_repo() {
+    local repo_path=$1
+    local repo_name=$2
+    
+    if [[ -d "$repo_path" ]]; then
+        echo "✅ $repo_name repository found"
+        return 0
+    else
+        echo "⚠️ $repo_name repository not found or not properly installed"
+        return 1
+    fi
+}
+
+# Check core repositories
+check_repo "/workspace/ComfyUI" "ComfyUI"
+check_repo "/workspace/ComfyUI/custom_nodes/ComfyUI-Manager" "ComfyUI-Manager"
+check_repo "/workspace/ComfyUI/custom_nodes/ComfyUI-Impact-Pack" "ComfyUI-Impact-Pack"
+
+# Check if any important repositories are missing
+if [[ -f "/installed_repos.txt" ]]; then
+    REPO_COUNT=$(cat /installed_repos.txt | wc -l)
+    echo "ℹ️ $REPO_COUNT repositories successfully installed"
+else
+    echo "⚠️ Repository installation tracking file not found"
+fi
+
+# Summary output
+if [[ $MISSING_FILES -eq 1 ]]; then
+    echo "⚠️ Some required files are missing. ComfyUI might not work properly."
+    echo "   You may need to download missing models or install missing repositories."
+else
+    echo "✅ All required files checked successfully"
 fi

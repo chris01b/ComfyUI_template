@@ -1,76 +1,49 @@
 #!/bin/bash
 
+# Create required directories
 mkdir -p /ComfyUI/models/{text_encoders,vae,diffusion_models,clip_vision}
 
-echo "Starting Wan2.1 installation process (models download and SageAttention installation concurrently)..."
+# Source the download helper functions
+source /download_helper.sh
 
+echo "✨ Starting Wan2.1 installation process..."
+
+# Install SageAttention in background
 install_sageattention() {
-    echo "Installing SageAttention..."
-    cd /
-
-    if [ ! -d "/SageAttention" ]; then
-        echo "Cloning SageAttention repository..."
-        git clone https://github.com/thu-ml/SageAttention.git
-    fi
-
-    cd /SageAttention
-    pip3 install -e .
-}
-
-# Function to download a model if it doesn't exist
-# Usage: download_model <model_type> <file_name>
-download_model() {
-    local model_type=$1
-    local file_name=$2
-    local dest_path="/ComfyUI/models/${model_type}/${file_name}"
-    local source_path="split_files/${model_type}/${file_name}"
-    local temp_dir="/ComfyUI/models/temp_download"
+    echo "🔧 Installing SageAttention..."
     
-    if [ -f "$dest_path" ]; then
-        echo "✓ ${file_name} already exists in ${model_type}"
+    # Use the helper script for consistent git cloning behavior
+    /clone_repo.sh "https://github.com/thu-ml/SageAttention.git" "/SageAttention" "main"
+    
+    if [ $? -eq 0 ]; then
+        cd /SageAttention
+        pip3 install -e . > /dev/null 2>&1
+        echo "✓ SageAttention installed successfully"
+        echo "SageAttention" >> /installed_repos.txt
     else
-        echo "↓ Downloading ${file_name} to ${model_type}..."
-        mkdir -p "$temp_dir"
-        
-        # Download to temporary directory
-        huggingface-cli download Comfy-Org/Wan_2.1_ComfyUI_repackaged "$source_path" --local-dir "$temp_dir"
-        
-        # Check if file was downloaded (might be directly in temp_dir)
-        if [ -f "$temp_dir/$file_name" ]; then
-            # File was downloaded directly to temp_dir
-            mkdir -p "/ComfyUI/models/${model_type}"
-            mv "$temp_dir/$file_name" "$dest_path"
-            echo "✓ Downloaded $file_name successfully"
-        else
-            # Check if downloaded with structure
-            if [ -f "$temp_dir/$source_path" ]; then
-                mkdir -p "/ComfyUI/models/${model_type}"
-                mv "$temp_dir/$source_path" "$dest_path"
-                echo "✓ Downloaded $file_name successfully"
-            else
-                echo "✗ Failed to download $file_name - file not found"
-            fi
-        fi
+        echo "❌ Failed to install SageAttention"
     fi
 }
 
-download_models() {
-    echo "Starting Wan2.1 models download using HF_HUB_ENABLE_HF_TRANSFER hf_transfer..."
-    download_model "text_encoders" "umt5_xxl_fp8_e4m3fn_scaled.safetensors"
-    download_model "vae" "wan_2.1_vae.safetensors"
-    download_model "diffusion_models" "wan2.1_i2v_720p_14B_bf16.safetensors"
-    download_model "clip_vision" "clip_vision_h.safetensors"
-    
-    # Clean up temporary download directories
-    rm -rf /ComfyUI/models/split_files
-    rm -rf /ComfyUI/models/temp_download
-}
-
-# Run both functions concurrently
+# Start SageAttention installation
 install_sageattention &
-download_models &
+SAGE_PID=$!
 
-# Wait for both background jobs to finish
-wait
+# Define models to download
+echo "⬇️ Starting Wan2.1 parallel model downloads using hf_transfer..."
 
-echo "✓ Wan2.1 installation completed successfully"
+# Define all models to download
+download_models_parallel 4 \
+    "Comfy-Org/Wan_2.1_ComfyUI_repackaged:split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors:/ComfyUI/models/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors:https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors?download=true:false" \
+    "Comfy-Org/Wan_2.1_ComfyUI_repackaged:split_files/vae/wan_2.1_vae.safetensors:/ComfyUI/models/vae/wan_2.1_vae.safetensors:https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors?download=true:false" \
+    "Comfy-Org/Wan_2.1_ComfyUI_repackaged:split_files/diffusion_models/wan2.1_i2v_720p_14B_bf16.safetensors:/ComfyUI/models/diffusion_models/wan2.1_i2v_720p_14B_bf16.safetensors:https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_i2v_720p_14B_bf16.safetensors?download=true:false" \
+    "Comfy-Org/Wan_2.1_ComfyUI_repackaged:split_files/clip_vision/clip_vision_h.safetensors:/ComfyUI/models/clip_vision/clip_vision_h.safetensors:https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors?download=true:false"
+
+# Wait for SageAttention installation
+wait $SAGE_PID
+
+# Clean up temporary download directories
+rm -rf /ComfyUI/models/split_files
+rm -rf /ComfyUI/models/temp_download
+
+echo "✅ Wan2.1 installation completed successfully"
