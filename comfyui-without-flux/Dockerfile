@@ -1,6 +1,7 @@
 ARG CUDA_VERSION="12.6.3"
 ARG UBUNTU_VERSION="24.04"
 ARG DOCKER_FROM=nvidia/cuda:$CUDA_VERSION-cudnn-devel-ubuntu$UBUNTU_VERSION
+ARG HF_TOKEN=""
 
 # Base NVidia CUDA Ubuntu image
 FROM $DOCKER_FROM AS base
@@ -13,7 +14,7 @@ ENV HF_HUB_ENABLE_HF_TRANSFER=1
 # Install system dependencies in a single layer
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
-    python3 python3-pip python3-venv \
+    python3 python3-pip python3-venv python3-dev \
     openssh-server openssh-client \
     git git-lfs \
     wget vim zip unzip curl \
@@ -60,7 +61,7 @@ COPY --chmod=755 clone_repo.sh /clone_repo.sh
 COPY --chmod=755 download_helper.sh /download_helper.sh
 
 # Clone ComfyUI and install core requirements
-RUN /clone_repo.sh "https://github.com/comfyanonymous/ComfyUI.git" "/ComfyUI" "main" && \
+RUN /clone_repo.sh "https://github.com/comfyanonymous/ComfyUI.git" "/ComfyUI" "master" && \
     cd /ComfyUI && \
     pip3 install -r requirements.txt && \
     mkdir -p custom_nodes pysssss-workflows
@@ -72,21 +73,21 @@ RUN touch /installed_repos.txt
 RUN cd /ComfyUI/custom_nodes && \
     /clone_repo.sh "https://github.com/ltdrdata/ComfyUI-Manager.git" "./ComfyUI-Manager" "main" && \
     /clone_repo.sh "https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git" "./ComfyUI-Custom-Scripts" "main" && \
-    /clone_repo.sh "https://github.com/ltdrdata/ComfyUI-Impact-Pack.git" "./ComfyUI-Impact-Pack" "main" && \
-    cd ComfyUI-Impact-Pack && \
-    pip3 install -r requirements.txt && \
-    python3 install.py && \
-    echo "ComfyUI-Impact-Pack" >> /installed_repos.txt
+    /clone_repo.sh "https://github.com/ltdrdata/ComfyUI-Impact-Pack.git" "./ComfyUI-Impact-Pack" "Main" && \
+    echo "ComfyUI-Manager" >> /installed_repos.txt && \
+    echo "ComfyUI-Custom-Scripts" >> /installed_repos.txt && \
+    cd ComfyUI-Impact-Pack && pip3 install -r requirements.txt && python3 install.py && echo "ComfyUI-Impact-Pack" >> /installed_repos.txt
 
 # Install additional custom nodes in parallel groups
 RUN cd /ComfyUI/custom_nodes && \
     # Group 1: Upscale nodes
-    /clone_repo.sh "https://github.com/flowtyone/ComfyUI-Flowty-LDSR.git" "./ComfyUI-Flowty-LDSR" "main" && \
+    /clone_repo.sh "https://github.com/flowtyone/ComfyUI-Flowty-LDSR.git" "./ComfyUI-Flowty-LDSR" "master" && \
     /clone_repo.sh "https://github.com/kijai/ComfyUI-SUPIR.git" "./ComfyUI-SUPIR" "main" && \
     /clone_repo.sh "https://github.com/ssitu/ComfyUI_UltimateSDUpscale.git" "./ComfyUI_UltimateSDUpscale" "main" "--recursive" && \
     # Install requirements for these nodes
     cd ComfyUI-Flowty-LDSR && pip3 install -r requirements.txt && echo "ComfyUI-Flowty-LDSR" >> /installed_repos.txt && cd .. && \
-    cd ComfyUI-SUPIR && pip3 install -r requirements.txt && echo "ComfyUI-SUPIR" >> /installed_repos.txt && cd ..
+    cd ComfyUI-SUPIR && pip3 install -r requirements.txt && echo "ComfyUI-SUPIR" >> /installed_repos.txt && cd .. && \
+    echo "ComfyUI_UltimateSDUpscale" >> /installed_repos.txt
 
 # Install more custom nodes (second batch)
 RUN cd /ComfyUI/custom_nodes && \
@@ -96,10 +97,14 @@ RUN cd /ComfyUI/custom_nodes && \
     /clone_repo.sh "https://github.com/JPS-GER/ComfyUI_JPS-Nodes.git" "./ComfyUI_JPS-Nodes" "main" && \
     /clone_repo.sh "https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes.git" "./ComfyUI_Comfyroll_CustomNodes" "main" && \
     /clone_repo.sh "https://github.com/Jordach/comfy-plasma.git" "./comfy-plasma" "main" && \
-    /clone_repo.sh "https://github.com/theUpsider/ComfyUI-Logic.git" "./ComfyUI-Logic" "main" && \
+    /clone_repo.sh "https://github.com/theUpsider/ComfyUI-Logic.git" "./ComfyUI-Logic" "master" && \
     # Install requirements for these nodes
     cd ComfyUI-KJNodes && pip3 install -r requirements.txt && echo "ComfyUI-KJNodes" >> /installed_repos.txt && cd .. && \
-    cd rgthree-comfy && pip3 install -r requirements.txt && echo "rgthree-comfy" >> /installed_repos.txt && cd ..
+    cd rgthree-comfy && pip3 install -r requirements.txt && echo "rgthree-comfy" >> /installed_repos.txt && cd .. && \
+    echo "ComfyUI_JPS-Nodes" >> /installed_repos.txt && \
+    echo "ComfyUI_Comfyroll_CustomNodes" >> /installed_repos.txt && \
+    echo "comfy-plasma" >> /installed_repos.txt && \
+    echo "ComfyUI-Logic" >> /installed_repos.txt
 
 # Install more custom nodes (third batch)
 RUN cd /ComfyUI/custom_nodes && \
@@ -131,22 +136,32 @@ RUN cd /ComfyUI/custom_nodes && \
     cd ComfyUI-Florence2 && pip3 install -r requirements.txt && mkdir -p /ComfyUI/models/LLM && echo "ComfyUI-Florence2" >> /installed_repos.txt && cd .. && \
     cd was-node-suite-comfyui && pip3 install -r requirements.txt && echo "was-node-suite-comfyui" >> /installed_repos.txt && cd .. && \
     cd ComfyUI_essentials && pip3 install -r requirements.txt && echo "ComfyUI_essentials" >> /installed_repos.txt && cd .. && \
+    echo "cg-image-picker" >> /installed_repos.txt && \
     cd ComfyUI_LayerStyle && pip3 install -r requirements.txt && echo "ComfyUI_LayerStyle" >> /installed_repos.txt && cd .. && \
     cd comfyui-mixlab-nodes && pip3 install -r requirements.txt && echo "comfyui-mixlab-nodes" >> /installed_repos.txt && cd .. && \
+    echo "cg-use-everywhere" >> /installed_repos.txt && \
     cd ComfyUI-CogVideoXWrapper && pip3 install -r requirements.txt && echo "ComfyUI-CogVideoXWrapper" >> /installed_repos.txt && cd .. && \
     cd comfyui-reactor-node && pip3 install -r requirements.txt && echo "comfyui-reactor-node" >> /installed_repos.txt && cd ..
 
-# Set up directories and download key model files in parallel
-RUN mkdir -p /ComfyUI/models/{ultralytics/bbox,insightface,LLM,checkpoints} && \
-    cd /ComfyUI/models && \
-    wget -q "https://huggingface.co/Bingsu/adetailer/resolve/main/face_yolov8m.pt?download=true" -O ultralytics/bbox/face_yolov8m.pt & \
-    wget -q "https://huggingface.co/ezioruan/inswapper_128.onnx/resolve/main/inswapper_128.onnx?download=true" -O insightface/inswapper_128.onnx & \
-    wget -q "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors?download=true" -O checkpoints/v1-5-pruned-emaonly-fp16.safetensors & \
-    wget -q "https://github.com/comfyanonymous/ComfyUI_examples/blob/master/flux/flux_dev_example.png" -P /ComfyUI & \
-    wait
+# Set up directories and download key model files using download_helper.sh
+RUN mkdir -p /ComfyUI/models/ultralytics/bbox && \
+    mkdir -p /ComfyUI/models/insightface && \
+    mkdir -p /ComfyUI/models/LLM && \
+    mkdir -p /ComfyUI/models/checkpoints && \
+    chmod +x /download_helper.sh && \
+    if [ ! -z "${HF_TOKEN}" ] && [ "${HF_TOKEN}" != "enter_your_huggingface_token_here" ]; then \
+        echo "🔑 Logging in to HuggingFace..." && \
+        huggingface-cli login --token ${HF_TOKEN}; \
+    fi && \
+    bash -c '. /download_helper.sh && \
+    download_models_parallel 3 \
+      "Bingsu/adetailer:face_yolov8m.pt:/ComfyUI/models/ultralytics/bbox/face_yolov8m.pt:https://huggingface.co/Bingsu/adetailer/resolve/main/face_yolov8m.pt?download=true:true" \
+      "ezioruan/inswapper_128.onnx:inswapper_128.onnx:/ComfyUI/models/insightface/inswapper_128.onnx:https://huggingface.co/ezioruan/inswapper_128.onnx/resolve/main/inswapper_128.onnx?download=true:true" \
+      "Comfy-Org/stable-diffusion-v1-5-archive:v1-5-pruned-emaonly-fp16.safetensors:/ComfyUI/models/checkpoints/v1-5-pruned-emaonly-fp16.safetensors:https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors?download=true:true"' && \
+    wget -q "https://raw.githubusercontent.com/comfyanonymous/ComfyUI_examples/master/flux/flux_dev_example.png" -P /ComfyUI
 
 # Clone AI-Toolkit (in separate layer since it's quite large)
-RUN /clone_repo.sh "https://github.com/ostris/ai-toolkit.git" "/ai-toolkit" "main" "--recursive" && \
+RUN /clone_repo.sh "https://github.com/ostris/ai-toolkit.git" "/ai-toolkit" "main" "--recurse-submodules" && \
     cd /ai-toolkit && \
     pip3 install --upgrade setuptools && \
     pip3 install -r requirements.txt && \
