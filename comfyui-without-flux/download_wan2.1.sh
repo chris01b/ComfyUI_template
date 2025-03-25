@@ -1,11 +1,21 @@
 #!/bin/bash
-# Wan 2.1 Model Downloader for ComfyUI
-# Uses high-speed HuggingFace transfer for optimal download performance
 
-# Create all required directories
 mkdir -p /ComfyUI/models/{text_encoders,vae,diffusion_models,clip_vision}
 
-echo "Starting Wan 2.1 models download using optimized hf_transfer method..."
+echo "Starting Wan2.1 installation process (models download and SageAttention installation concurrently)..."
+
+install_sageattention() {
+    echo "Installing SageAttention..."
+    cd /
+
+    if [ ! -d "/SageAttention" ]; then
+        echo "Cloning SageAttention repository..."
+        git clone https://github.com/thu-ml/SageAttention.git
+    fi
+
+    cd /SageAttention
+    pip3 install -e .
+}
 
 # Function to download a model if it doesn't exist
 # Usage: download_model <model_type> <file_name>
@@ -44,28 +54,23 @@ download_model() {
     fi
 }
 
-# Download all required model files
-download_model "text_encoders" "umt5_xxl_fp8_e4m3fn_scaled.safetensors"
-download_model "vae" "wan_2.1_vae.safetensors"
-download_model "diffusion_models" "wan2.1_i2v_720p_14B_bf16.safetensors"
-download_model "clip_vision" "clip_vision_h.safetensors"
+download_models() {
+    echo "Starting Wan2.1 models download using HF_HUB_ENABLE_HF_TRANSFER hf_transfer..."
+    download_model "text_encoders" "umt5_xxl_fp8_e4m3fn_scaled.safetensors"
+    download_model "vae" "wan_2.1_vae.safetensors"
+    download_model "diffusion_models" "wan2.1_i2v_720p_14B_bf16.safetensors"
+    download_model "clip_vision" "clip_vision_h.safetensors"
+    
+    # Clean up temporary download directories
+    rm -rf /ComfyUI/models/split_files
+    rm -rf /ComfyUI/models/temp_download
+}
 
-# Install SageAttention
-echo "Installing SageAttention..."
-cd /
+# Run both functions concurrently
+install_sageattention &
+download_models &
 
-# Only clone if repo doesn't exist yet
-if [ ! -d "/SageAttention" ]; then
-    echo "Cloning SageAttention repository..."
-    git clone https://github.com/thu-ml/SageAttention.git
-fi
+# Wait for both background jobs to finish
+wait
 
-# Always install/update the package
-cd /SageAttention
-pip3 install -e .
-
-# Clean up temporary download directories
-rm -rf /ComfyUI/models/split_files
-rm -rf /ComfyUI/models/temp_download
-
-echo "✓ Wan 2.1 models installation completed successfully"
+echo "✓ Wan2.1 installation completed successfully"
