@@ -39,7 +39,7 @@ mkdir -p $(dirname "$DEST_PATH")
 # Clone with shallow depth for faster cloning and smaller size
 # The --depth 1 option creates a shallow clone with only the latest commit
 # The --single-branch option clones only the specified branch
-CLONE_CMD="git clone --depth 1 --single-branch --branch $BRANCH $REPO_URL $DEST_PATH $EXTRA_ARGS"
+CLONE_CMD="git clone $EXTRA_ARGS --depth 1 --single-branch --branch $BRANCH $REPO_URL $DEST_PATH"
 
 echo "Running: $CLONE_CMD"
 eval $CLONE_CMD
@@ -51,11 +51,11 @@ if [ $? -ne 0 ]; then
     # Try without branch specification as fallback (some repos use 'master' instead of 'main')
     if [ "$BRANCH" = "main" ]; then
         echo "Trying to clone with 'master' branch instead..."
-        git clone --depth 1 --single-branch --branch master $REPO_URL $DEST_PATH $EXTRA_ARGS
+        git clone $EXTRA_ARGS --depth 1 --single-branch --branch master $REPO_URL $DEST_PATH
         
         if [ $? -ne 0 ]; then
             echo "Trying to clone without branch specification..."
-            git clone --depth 1 $REPO_URL $DEST_PATH $EXTRA_ARGS
+            git clone $EXTRA_ARGS --depth 1 $REPO_URL $DEST_PATH
             
             if [ $? -ne 0 ]; then
                 echo "ERROR: All attempts to clone $REPO_URL failed."
@@ -65,7 +65,7 @@ if [ $? -ne 0 ]; then
     else
         # If a specific branch/tag was requested, try without branch specification
         echo "Trying to clone without branch specification..."
-        git clone --depth 1 $REPO_URL $DEST_PATH $EXTRA_ARGS
+        git clone $EXTRA_ARGS --depth 1 $REPO_URL $DEST_PATH
         
         if [ $? -eq 0 ]; then
             # Try to checkout the specified branch/tag
